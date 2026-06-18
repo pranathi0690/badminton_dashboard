@@ -1,78 +1,67 @@
 import streamlit as st
 import pandas as pd
 import json
+import requests
 import glob
 
-st.title("🏸 Badminton Coach Report")
+st.set_page_config(layout="wide", page_title="Badminton Pro Coach")
 
-# Automatically find the file starting with 'unified'
-files = glob.glob("unified*.json")
+# --- 1. DATA LOADING ---
+@st.cache_data
+def load_data():
+    u_files = glob.glob("unified*.json")
+    df = pd.read_json(u_files[0]) if u_files else pd.DataFrame()
+    with open("heatmaps.json", "r") as f:
+        hm = json.load(f)
+    return df, hm
 
-if not files:
-    st.error("No file starting with 'unified' found in this folder!")
-    st.write("Current files found:", glob.glob("*"))
-else:
-    filename = files[0] # Pick the first file found
-    st.write(f"Loading: {filename}")
-    
-    with open(filename, 'r') as f:
-        data = json.load(f)
-    df = pd.DataFrame(data)
-    
-    st.success("Data loaded successfully!")
-    st.dataframe(df.head())
-    st.line_chart(df['speed_smoothed'])
-# Add this after st.subheader("Data Overview")
-footwork_type = st.selectbox("Select Footwork Type", df['footwork_label'].unique())
-filtered_df = df[df['footwork_label'] == footwork_type]
-st.dataframe(filtered_df.head())
-# Add this to show an instant stat
-st.metric("Avg Speed for selected movement", round(filtered_df['speed_smoothed'].mean(), 2))
-# Add this snippet after your df = pd.DataFrame(data) line
-movement_options = df['footwork_label'].unique()
-selected_movement = st.sidebar.selectbox("Choose a movement to analyze:", movement_options)
+df, hm = load_data()
 
-# Filter the data
-filtered_df = df[df['footwork_label'] == selected_movement]
+# --- 2. SIDEBAR: VIDEO & SELECTION ---
+st.sidebar.header("📹 Input & Settings")
+uploaded_file = st.sidebar.file_uploader("Upload Badminton Video", type=["mp4", "mov", "avi"])
 
-st.subheader(f"Analysis for: {selected_movement}")
-st.line_chart(filtered_df['speed_smoothed'])
-# Add this right under your subheader
-col1, col2, col3 = st.columns(3)
-col1.metric("Avg Speed", f"{round(filtered_df['speed_smoothed'].mean(), 2)}")
-col2.metric("Max Speed", f"{round(filtered_df['speed_smoothed'].max(), 2)}")
-col3.metric("Avg Recovery", f"{round(filtered_df['recovery_time'].mean(), 2)} frames")
-st.subheader("Movement Hotspots")
-# Using hip_center_x and hip_center_y as the tracking coordinates
-st.scatter_chart(filtered_df, x='hip_center_x', y='hip_center_y')
-st.subheader("Movement Intensity Map")
+if uploaded_file:
+    st.sidebar.success("Video Processed Successfully!")
+    st.sidebar.video(uploaded_file)
 
-# We color-code by 'speed' to show intensity
-# We use hip_center coordinates to map the court position
-st.scatter_chart(
-    filtered_df, 
-    x='hip_center_x', 
-    y='hip_center_y', 
-    color='speed', 
-    size='speed'
-)
-st.caption("Dots scale by intensity: Larger/brighter dots = higher speed bursts.")
-st.subheader("Efficiency Report")
-# Group by footwork label to see which one has the lowest path efficiency
-efficiency_df = filtered_df.groupby('footwork_label')['path_efficiency'].mean().reset_index()
-st.bar_chart(efficiency_df.set_index('footwork_label'))
-# Create a dashboard header layout
-col1, col2 = st.columns([1, 1]) # Splits the page 50/50
+st.sidebar.divider()
+selected_movement = st.sidebar.selectbox("Choose Footwork Pattern:", df['footwork_label'].unique())
+f_df = df[df['footwork_label'] == selected_movement]
 
-with col1:
-    st.subheader("Intensity Map")
-    st.scatter_chart(filtered_df, x='hip_center_x', y='hip_center_y', color='speed')
+# --- 3. MAIN DASHBOARD ---
+st.title("🏸 Badminton Performance Pro")
 
-with col2:
-    st.subheader("Efficiency")
-    st.bar_chart(filtered_df.groupby('footwork_label')['path_efficiency'].mean())
-primaryColor = "#F63366"  # A sharp 'Badminton Red'
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
-textColor = "#262730"
-font = "sans serif"
+# Top Metrics
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Total Frames", hm['metadata']['total_frames_compiled'])
+col2.metric("Avg Speed", f"{f_df['speed_smoothed'].mean():.2f}")
+col3.metric("Max Speed", f"{f_df['speed_smoothed'].max():.2f}")
+col4.metric("Efficiency", f"{f_df['path_efficiency'].mean():.2%}")
+
+# Visuals Row
+c1, c2 = st.columns([1.5, 1])
+with c1:
+    st.subheader(f"Movement Intensity: {selected_movement}")
+    st.scatter_chart(f_df, x='hip_center_x', y='hip_center_y', color='speed', size='speed')
+
+with c2:
+    st.subheader("Court Zone Distribution")
+    occ = pd.DataFrame.from_dict(hm['court_occupancy_bin_percentages'], orient='index', columns=['%'])
+    st.bar_chart(occ)
+
+# --- 4. AI TACTICAL COACH ---
+with st.expander("🤖 Click for AI Tactical Advice", expanded=True):
+    if st.button("Generate Tactical Analysis"):
+        with st.spinner("Analyzing your movement..."):
+            summary = f"Movement: {selected_movement}, Avg Speed: {f_df['speed_smoothed'].mean():.2f}. Dominant Zone: {hm['individual_session_profiles']['open_video_trim_3']['dominant_court_zone']}."
+            prompt = f"Coach: {summary}. Give 2 expert tactical tips for this footwork pattern."
+            
+            try:
+                response = requests.post("http://localhost:11434/api/generate", 
+                                       json={"model": "phi3", "prompt": prompt, "stream": False}, timeout=60)
+                st.markdown(response.json().get('response'))
+            except Exception as e:
+                st.error("Ollama is not running. Please ensure the server is active.")
+
+st.caption("Pro-Tip: Compare different footwork types using the sidebar to find your most efficient patterns.")

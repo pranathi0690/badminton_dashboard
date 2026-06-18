@@ -49,17 +49,26 @@ if uploaded_file:
             st.bar_chart(occ)
 
         # --- 4. AI TACTICAL COACH ---
+       # --- 4. AI TACTICAL COACH ---
         with st.expander("🤖 Click for AI Tactical Advice", expanded=True):
             if st.button("Generate Tactical Analysis"):
                 with st.spinner("Analyzing movement..."):
-                    api_key = st.secrets.get("GROQ_API_KEY")
+                    # FAIL-SAFE API KEY LOADING
+                    try:
+                        api_key = st.secrets["GROQ_API_KEY"]
+                    except:
+                        # FALLBACK: Used only if .streamlit/secrets.toml is missing
+                        api_key = None
+                    if not api_key:
+                     st.error("API Key not found. Please set it in Streamlit Cloud Settings.")
+                    
                     prompt = f"As a professional coach, analyze movement {selected_movement} with avg speed {f_df['speed_smoothed'].mean():.2f}. Provide 2 expert tactical tips."
                     
                     payload = {"model": "llama-3.3-70b-versatile", "messages": [{"role": "user", "content": prompt}]}
                     
                     try:
                         response = requests.post("https://api.groq.com/openai/v1/chat/completions", 
-                                               headers={"Authorization": f"Bearer {api_key}"}, json=payload, timeout=60)
+                                                headers={"Authorization": f"Bearer {api_key}"}, json=payload, timeout=60)
                         if response.status_code == 200:
                             st.markdown(f"### 📋 Coach's Report\n{response.json()['choices'][0]['message']['content']}")
                         else:

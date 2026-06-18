@@ -48,27 +48,32 @@ with c2:
     occ = pd.DataFrame.from_dict(hm['court_occupancy_bin_percentages'], orient='index', columns=['%'])
     st.bar_chart(occ)
 
-# --- 4. AI TACTICAL COACH (CLOUD READY) ---
+# --- 4. AI TACTICAL COACH ---
 with st.expander("🤖 Click for AI Tactical Advice", expanded=True):
     if st.button("Generate Tactical Analysis"):
         with st.spinner("Analyzing your movement..."):
-            # Prepare Data Summary
             summary = f"Movement: {selected_movement}, Avg Speed: {f_df['speed_smoothed'].mean():.2f}."
             prompt = f"As a professional badminton coach, analyze: {summary}. Provide 2 expert tactical tips."
             
+            # --- TESTING BLOCK ---
+            api_key = st.secrets.get("GROQ_API_KEY") # PASTE YOUR KEY INSIDE THESE QUOTES
+            
+            headers = {"Authorization": f"Bearer {api_key}"}
+            payload = {
+                "model": "llama-3.3-70b-versatile",  # UPDATED MODEL NAME
+                "messages": [{"role": "user", "content": prompt}]
+            }
+            
             try:
-                # API Call to Groq (Cloud AI)
-                headers = {"Authorization": f"Bearer {st.secrets['GROQ_API_KEY']}"}
-                payload = {
-                    "model": "llama3-8b-8192",
-                    "messages": [{"role": "user", "content": prompt}]
-                }
                 response = requests.post("https://api.groq.com/openai/v1/chat/completions", 
                                        headers=headers, json=payload, timeout=60)
                 
-                report = response.json()['choices'][0]['message']['content']
-                st.markdown(f"### 📋 Coach's Report\n{report}")
+                if response.status_code == 200:
+                    report = response.json()['choices'][0]['message']['content']
+                    st.markdown(f"### 📋 Coach's Report\n{report}")
+                else:
+                    st.error(f"Error: {response.status_code} - {response.text}")
             except Exception as e:
-                st.error("AI Service is currently unreachable. Please check your API Key in Settings.")
+                st.error(f"Connection failed: {e}")
 
 st.caption("Pro-Tip: Compare different footwork types using the sidebar.")

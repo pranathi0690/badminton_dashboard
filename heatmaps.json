@@ -1,0 +1,79 @@
+{
+    "metadata": {
+        "total_frames_compiled": 1921,
+        "monitored_sessions_count": 9
+    },
+    "court_occupancy_bin_percentages": {
+        "left_front_net_zone": 11.24,
+        "right_front_net_zone": 8.54,
+        "left_mid_court_zone": 33.16,
+        "right_mid_court_zone": 29.31,
+        "left_back_court_zone": 9.73,
+        "right_back_court_zone": 7.44
+    },
+    "classified_footwork_patterns": {
+        "Forehand_Front": 20.72,
+        "Backhand_Mid": 16.29,
+        "Recovery_Ready": 15.15,
+        "Backhand_Backcourt": 14.73,
+        "Backhand_Front": 11.76,
+        "Forehand_Mid": 11.24,
+        "Forehand_Backcourt": 10.1
+    },
+    "individual_session_profiles": {
+        "open_video_trim_3": {
+            "dominant_court_zone": "Back Court (Rear Control)",
+            "average_speed_metric": 0.042,
+            "frequent_footwork_action": "Backhand_Mid",
+            "sample_size_frames": 332
+        },
+        "single_2_bb": {
+            "dominant_court_zone": "Back Court (Rear Control)",
+            "average_speed_metric": 0.295,
+            "frequent_footwork_action": "Forehand_Front",
+            "sample_size_frames": 191
+        },
+        "open_video_trim_2": {
+            "dominant_court_zone": "Back Court (Rear Control)",
+            "average_speed_metric": 0.049,
+            "frequent_footwork_action": "Backhand_Backcourt",
+            "sample_size_frames": 332
+        },
+        "open_video_mp_1": {
+            "dominant_court_zone": "Back Court (Rear Control)",
+            "average_speed_metric": 50.375,
+            "frequent_footwork_action": "Forehand_Front",
+            "sample_size_frames": 264
+        },
+        "multishuttlecock_bb": {
+            "dominant_court_zone": "Back Court (Rear Control)",
+            "average_speed_metric": 0.203,
+            "frequent_footwork_action": "Backhand_Backcourt",
+            "sample_size_frames": 163
+        },
+        "single_1_bb": {
+            "dominant_court_zone": "Back Court (Rear Control)",
+            "average_speed_metric": 0.313,
+            "frequent_footwork_action": "Backhand_Backcourt",
+            "sample_size_frames": 98
+        },
+        "singles___5_bb": {
+            "dominant_court_zone": "Back Court (Rear Control)",
+            "average_speed_metric": 0.237,
+            "frequent_footwork_action": "Recovery_Ready",
+            "sample_size_frames": 112
+        },
+        "Badminton full court": {
+            "dominant_court_zone": "Back Court (Rear Control)",
+            "average_speed_metric": 0.041,
+            "frequent_footwork_action": "Backhand_Backcourt",
+            "sample_size_frames": 332
+        },
+        "doubles_bb": {
+            "dominant_court_zone": "Back Court (Rear Control)",
+            "average_speed_metric": 0.194,
+            "frequent_footwork_action": "Forehand_Mid",
+            "sample_size_frames": 97
+        }
+    }
+}

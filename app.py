@@ -32,14 +32,12 @@ f_df = df[df['footwork_label'] == selected_movement]
 # --- 3. MAIN DASHBOARD ---
 st.title("🏸 Badminton Performance Pro")
 
-# Top Metrics
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Total Frames", hm['metadata']['total_frames_compiled'])
 col2.metric("Avg Speed", f"{f_df['speed_smoothed'].mean():.2f}")
 col3.metric("Max Speed", f"{f_df['speed_smoothed'].max():.2f}")
 col4.metric("Efficiency", f"{f_df['path_efficiency'].mean():.2%}")
 
-# Visuals Row
 c1, c2 = st.columns([1.5, 1])
 with c1:
     st.subheader(f"Movement Intensity: {selected_movement}")
@@ -50,18 +48,27 @@ with c2:
     occ = pd.DataFrame.from_dict(hm['court_occupancy_bin_percentages'], orient='index', columns=['%'])
     st.bar_chart(occ)
 
-# --- 4. AI TACTICAL COACH ---
+# --- 4. AI TACTICAL COACH (CLOUD READY) ---
 with st.expander("🤖 Click for AI Tactical Advice", expanded=True):
     if st.button("Generate Tactical Analysis"):
         with st.spinner("Analyzing your movement..."):
-            summary = f"Movement: {selected_movement}, Avg Speed: {f_df['speed_smoothed'].mean():.2f}. Dominant Zone: {hm['individual_session_profiles']['open_video_trim_3']['dominant_court_zone']}."
-            prompt = f"Coach: {summary}. Give 2 expert tactical tips for this footwork pattern."
+            # Prepare Data Summary
+            summary = f"Movement: {selected_movement}, Avg Speed: {f_df['speed_smoothed'].mean():.2f}."
+            prompt = f"As a professional badminton coach, analyze: {summary}. Provide 2 expert tactical tips."
             
             try:
-                response = requests.post("http://localhost:11434/api/generate", 
-                                       json={"model": "phi3", "prompt": prompt, "stream": False}, timeout=60)
-                st.markdown(response.json().get('response'))
+                # API Call to Groq (Cloud AI)
+                headers = {"Authorization": f"Bearer {st.secrets['GROQ_API_KEY']}"}
+                payload = {
+                    "model": "llama3-8b-8192",
+                    "messages": [{"role": "user", "content": prompt}]
+                }
+                response = requests.post("https://api.groq.com/openai/v1/chat/completions", 
+                                       headers=headers, json=payload, timeout=60)
+                
+                report = response.json()['choices'][0]['message']['content']
+                st.markdown(f"### 📋 Coach's Report\n{report}")
             except Exception as e:
-                st.error("Ollama is not running. Please ensure the server is active.")
+                st.error("AI Service is currently unreachable. Please check your API Key in Settings.")
 
-st.caption("Pro-Tip: Compare different footwork types using the sidebar to find your most efficient patterns.")
+st.caption("Pro-Tip: Compare different footwork types using the sidebar.")
